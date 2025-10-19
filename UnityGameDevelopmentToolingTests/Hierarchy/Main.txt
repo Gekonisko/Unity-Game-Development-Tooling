@@ -1,0 +1,2 @@
+Main Camera
+Global Light 2D

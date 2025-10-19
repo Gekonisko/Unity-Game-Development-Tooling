@@ -1,0 +1,78 @@
+﻿Plane
+KapitolDoor
+Zulis
+--Zulis
+----Armature
+------mixamorig:Hips
+--------mixamorig:LeftUpLeg
+----------mixamorig:LeftLeg
+------------mixamorig:LeftFoot
+--------------mixamorig:LeftToeBase
+----------------mixamorig:LeftToe_End
+------------------mixamorig:LeftToe_End_end
+--------mixamorig:RightUpLeg
+----------mixamorig:RightLeg
+------------mixamorig:RightFoot
+--------------mixamorig:RightToeBase
+----------------mixamorig:RightToe_End
+------------------mixamorig:RightToe_End_end
+--------mixamorig:Spine
+----------mixamorig:Spine1
+------------mixamorig:Spine2
+--------------mixamorig:LeftShoulder
+----------------mixamorig:LeftArm
+------------------mixamorig:LeftForeArm
+--------------------mixamorig:LeftHand
+----------------------mixamorig:LeftHandIndex1
+------------------------mixamorig:LeftHandIndex2
+--------------------------mixamorig:LeftHandIndex3
+----------------------------mixamorig:LeftHandIndex4
+------------------------------mixamorig:LeftHandIndex4_end
+----------------------mixamorig:LeftHandThumb1
+------------------------mixamorig:LeftHandThumb2
+--------------------------mixamorig:LeftHandThumb3
+----------------------------mixamorig:LeftHandThumb4
+------------------------------mixamorig:LeftHandThumb4_end
+--------------mixamorig:Neck
+----------------mixamorig:Head
+------------------mixamorig:HeadTop_End
+--------------------mixamorig:HeadTop_End_end
+--------------mixamorig:RightShoulder
+----------------mixamorig:RightArm
+------------------mixamorig:RightForeArm
+--------------------mixamorig:RightHand
+----------------------mixamorig:RightHandIndex1
+------------------------mixamorig:RightHandIndex2
+--------------------------mixamorig:RightHandIndex3
+----------------------------mixamorig:RightHandIndex4
+------------------------------mixamorig:RightHandIndex4_end
+----------------------mixamorig:RightHandThumb1
+------------------------mixamorig:RightHandThumb2
+--------------------------mixamorig:RightHandThumb3
+----------------------------mixamorig:RightHandThumb4
+------------------------------mixamorig:RightHandThumb4_end
+----Marian
+----CameraTarget
+--Virtual Camera
+----cm
+SP_FROM_MENU
+Plane (2)
+Plane (3)
+Kosz
+--GFX
+Plane (1)
+Environment
+--Cars
+--Lamps
+NPC
+SP_FROM_KAPITOL
+Light Setup
+--Directional Light
+--GlobalPostProcess
+--Studio Reflection Probe
+--Kapitol Reflection Probe
+--Parking1 Reflection Probe
+--Hajduczek Reflection Probe
+--StudenciakAmbient
+--Decal Projector
+SceneContext
