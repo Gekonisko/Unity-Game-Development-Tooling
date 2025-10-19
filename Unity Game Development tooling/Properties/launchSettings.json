@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Unity Game Development tooling": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Kuba\\Projects\\Unity\\hotdog-empire"
+    }
+  }
+}
