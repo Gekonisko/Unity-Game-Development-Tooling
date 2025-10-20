@@ -9,14 +9,15 @@ using YamlDotNet.Serialization;
 
 namespace UnityGameDevelopmentTooling.Services
 {
-    public class UnityProjectAnalizer
+    public class UnityProjectAnalyzer
     {
         public readonly string Assets = "Assets";
         private readonly ISceneDeserializer _deserializer;
         private readonly string _projectPath;
         private readonly string _assetPath;
+        private FileResult[]? _cachedScriptFiles;
 
-        public UnityProjectAnalizer(string projectPath, ISceneDeserializer deserializer)
+        public UnityProjectAnalyzer(string projectPath, ISceneDeserializer deserializer)
         {
             _projectPath = projectPath;
             _deserializer = deserializer;
@@ -25,6 +26,7 @@ namespace UnityGameDevelopmentTooling.Services
 
         public AnalysisResult Analize()
         {
+            var externalGuids = new ConcurrentBag<string>();
             var scenes = new ConcurrentBag<SceneData>();
             var monoBehavioursInScenesByGuid = new ConcurrentDictionary<ScriptGuid, List<(SceneName SceneName, MonoBehaviour MonoBehaviour)>>();
 
@@ -42,15 +44,27 @@ namespace UnityGameDevelopmentTooling.Services
 
                 foreach (var mb in monoBehaviours)
                 {
+                    var allGuids = Utils.YamlUtils.ExtractGuidsFromYaml(mb.Yaml);
+                    allGuids.Remove(mb.Script.guid);
+                    allGuids.ForEach(g => externalGuids.Add(g));
+
                     var guid = new ScriptGuid(mb.Script.guid);
                     monoBehavioursInScenesByGuid.AddOrUpdate(
                         guid,
                         _ => new List<(SceneName, MonoBehaviour)> { (sceneName, mb) },
-                        (_, existing) => { lock (existing) existing.Add((sceneName, mb)); return existing; });
+                        (_, existing) =>
+                        {
+                            lock (existing)
+                            {
+                                existing.Add((sceneName, mb));
+                                return existing;
+                            }
+                        });
                 }
             });
 
-            return new AnalysisResult(scenes.ToList(), monoBehavioursInScenesByGuid.ToDictionary());
+            var externalScriptsInScene = GetExternalScripts(externalGuids.ToList());
+            return new AnalysisResult(scenes.ToList(), monoBehavioursInScenesByGuid.ToDictionary(), externalScriptsInScene);
         }
 
         public List<(string Name, string Hierarchy)> GetScenesHierarchies(AnalysisResult analysisResult)
@@ -75,12 +89,13 @@ namespace UnityGameDevelopmentTooling.Services
             if (analysisResult.MonoBehavioursInScenesByGuid is null)
                 throw new InvalidOperationException("You must call Analize() before GetUnusedScripts().");
 
-            FileResult[] scriptFiles = FileUtils.FindFilesByExtension(_assetPath, "cs");
+            FileResult[] scriptFiles = GetScriptFiles();
             List<FileResult> unusedScripts = new();
 
             foreach (FileResult scriptFile in scriptFiles)
             {
-                if (analysisResult.MonoBehavioursInScenesByGuid.ContainsKey(new ScriptGuid(scriptFile.Guid)) == false)
+                if (analysisResult.MonoBehavioursInScenesByGuid.ContainsKey(new ScriptGuid(scriptFile.Guid)) == false &&
+                    analysisResult.ExternalScriptsInScene.ContainsKey(new ScriptGuid(scriptFile.Guid)) == false)
                 {
                     unusedScripts.Add(scriptFile);
                 }
@@ -92,7 +107,7 @@ namespace UnityGameDevelopmentTooling.Services
         {
             var result = new ConcurrentBag<FileResult>();
 
-            FileResult[] scriptFiles = FileUtils.FindFilesByExtension(_assetPath, "cs");
+            FileResult[] scriptFiles = GetScriptFiles();
             var guidPerFile = scriptFiles.ToDictionary(f => f.Guid, f => f);
 
             Parallel.ForEach(analysisResult.MonoBehavioursInScenesByGuid.Values, monoBehaviours =>
@@ -123,6 +138,29 @@ namespace UnityGameDevelopmentTooling.Services
             });
 
             return result.Distinct().ToList();
+        }
+
+        private Dictionary<ScriptGuid, string> GetExternalScripts(List<string> externalGuids)
+        {
+            Dictionary<ScriptGuid, string> result = new();
+            FileResult[] scriptFiles = GetScriptFiles();
+            var guidPerPath = scriptFiles.ToDictionary(sf => sf.Guid, sf => sf.AbsolutePath);
+
+            foreach (string guid in externalGuids)
+            {
+                if (guidPerPath.ContainsKey(guid))
+                    result.Add(new ScriptGuid(guid), guidPerPath[guid]);
+            }
+            return result;
+        }
+
+        private FileResult[] GetScriptFiles()
+        {
+            if (_cachedScriptFiles == null)
+            {
+                _cachedScriptFiles = FileUtils.FindFilesByExtension(_assetPath, "cs");
+            }
+            return _cachedScriptFiles;
         }
     }
 }

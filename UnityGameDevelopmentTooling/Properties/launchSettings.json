@@ -2,7 +2,7 @@
   "profiles": {
     "UnityGameDevelopmentTooling": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Kuba\\Projects\\Unity\\Example\r\nC:\\Users\\Kuba\\Projects\\output"
+      "commandLineArgs": "C:\\Users\\Kuba\\Projects\\Unity\\TestCase02\r\nC:\\Users\\Kuba\\Projects\\output"
     }
   }
 }

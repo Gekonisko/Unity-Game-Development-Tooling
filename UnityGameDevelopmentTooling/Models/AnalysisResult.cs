@@ -14,5 +14,9 @@ namespace UnityGameDevelopmentTooling.Models
 
     public record SceneData(SceneName Name, Dictionary<UnityObjectInfo, UnityObject> Objects);
 
-    public record AnalysisResult(List<SceneData> Scenes, Dictionary<ScriptGuid, List<(SceneName SceneName, MonoBehaviour MonoBehaviour)>> MonoBehavioursInScenesByGuid);
+    public record AnalysisResult(
+        List<SceneData> Scenes,
+        Dictionary<ScriptGuid, List<(SceneName SceneName, MonoBehaviour MonoBehaviour)>> MonoBehavioursInScenesByGuid,
+        Dictionary<ScriptGuid, string> ExternalScriptsInScene
+        );
 }

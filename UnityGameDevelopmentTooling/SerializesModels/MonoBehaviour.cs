@@ -10,14 +10,7 @@ namespace UnityGameDevelopmentTooling.SerializesModels
 
         public string GetScriptGuid()
         {
-            if (Script is not null)
-            {
-                return Script.guid;
-            }
-            else
-            {
-                return string.Empty;
-            }
+            return Script?.guid ?? string.Empty;
         }
     }
 }

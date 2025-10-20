@@ -1,4 +1,5 @@
-﻿using YamlDotNet.Serialization;
+﻿using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
 
 namespace UnityGameDevelopmentTooling.Utils
 {
@@ -18,6 +19,19 @@ namespace UnityGameDevelopmentTooling.Utils
             string first = parts[0];
             string body = parts.Length > 1 ? "\n" + parts[1] : string.Empty;
             return (first, body);
+        }
+
+        public static List<string> ExtractGuidsFromYaml(string yaml)
+        {
+            var guids = new List<string>();
+            var matches = Regex.Matches(yaml, @"guid:\s*([0-9a-fA-F]{32})");
+
+            foreach (Match match in matches)
+            {
+                guids.Add(match.Groups[1].Value);
+            }
+
+            return guids;
         }
     }
 }

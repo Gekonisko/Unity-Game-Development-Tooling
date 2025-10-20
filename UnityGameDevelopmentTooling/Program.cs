@@ -40,7 +40,7 @@ namespace UnityGameDevelopmentTooling
             ISceneParser sceneParser = new SceneParser();
             ISceneDeserializer deserializer = new SceneDeserializer(sceneParser, yaml);
 
-            UnityProjectAnalizer analizer = new UnityProjectAnalizer(projectPath, deserializer);
+            UnityProjectAnalyzer analizer = new UnityProjectAnalyzer(projectPath, deserializer);
 
             var sw = Stopwatch.StartNew();
             AnalysisResult analysisResult = analizer.Analize();
