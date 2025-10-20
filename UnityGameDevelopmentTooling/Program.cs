@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
 using UnityGameDevelopmentTooling.Services;
@@ -40,6 +41,8 @@ namespace UnityGameDevelopmentTooling
             ISceneDeserializer deserializer = new SceneDeserializer(sceneParser, yaml);
 
             UnityProjectAnalizer analizer = new UnityProjectAnalizer(projectPath, deserializer);
+
+            var sw = Stopwatch.StartNew();
             AnalysisResult analysisResult = analizer.Analize();
 
             analizer.GetScenesHierarchies(analysisResult).ForEach(scene =>
@@ -59,6 +62,8 @@ namespace UnityGameDevelopmentTooling
                 unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
             }
             File.WriteAllText(outputPath + "\\UnusedScripts.csv", unusedScriptsBuffer.ToString());
+            sw.Stop();
+            Console.WriteLine($"Parallel analysis took {sw.ElapsedMilliseconds} ms");
         }
     }
 }

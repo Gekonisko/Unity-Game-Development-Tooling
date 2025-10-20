@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections.Concurrent;
 using UnityGameDevelopmentTooling.Extensions;
 using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
@@ -24,30 +25,31 @@ namespace UnityGameDevelopmentTooling.Services
 
         public AnalysisResult Analize()
         {
-            var scenes = new List<SceneData>();
-            var monoBehavioursInScenesByGuid = new Dictionary<ScriptGuid, List<MonoBehaviour>>();
+            var scenes = new ConcurrentBag<SceneData>();
+            var monoBehavioursInScenesByGuid = new ConcurrentDictionary<ScriptGuid, List<MonoBehaviour>>();
 
             FileResult[] sceneFiles = FileUtils.FindFilesByExtension(_assetPath, "unity");
 
-            foreach (FileResult sceneFile in sceneFiles)
+            Parallel.ForEach(sceneFiles, sceneFile =>
             {
                 var sceneObjects = _deserializer.DeserializeScene(sceneFile.AbsolutePath);
                 scenes.Add(new SceneData(new SceneName(sceneFile.Name), sceneObjects));
 
-                sceneObjects
-                    .Where(sb => sb.Key.ClassId == 114) // https://docs.unity3d.com/6000.2/Documentation/Manual/ClassIDReference.html
-                    .Select(sb => (MonoBehaviour)sb.Value)
-                    .ToList()
-                    .ForEach(mb =>
-                    {
-                        var guid = new ScriptGuid(mb.Script.guid);
-                        if (monoBehavioursInScenesByGuid.ContainsKey(guid))
-                            monoBehavioursInScenesByGuid[guid].Add(mb);
-                        else
-                            monoBehavioursInScenesByGuid.Add(guid, [mb]);
-                    });
-            }
-            return new AnalysisResult(scenes, monoBehavioursInScenesByGuid);
+                var monoBehaviours = sceneObjects
+                    .Where(sb => sb.Key.ClassId == 114)
+                    .Select(sb => (MonoBehaviour)sb.Value);
+
+                foreach (var mb in monoBehaviours)
+                {
+                    var guid = new ScriptGuid(mb.Script.guid);
+                    monoBehavioursInScenesByGuid.AddOrUpdate(
+                        guid,
+                        _ => new List<MonoBehaviour> { mb },
+                        (_, existing) => { lock (existing) existing.Add(mb); return existing; });
+                }
+            });
+
+            return new AnalysisResult(scenes.ToList(), monoBehavioursInScenesByGuid.ToDictionary());
         }
 
         public List<(string Name, string Hierarchy)> GetScenesHierarchies(AnalysisResult analysisResult)
@@ -55,14 +57,16 @@ namespace UnityGameDevelopmentTooling.Services
             if (analysisResult.Scenes is null)
                 throw new InvalidOperationException("You must call Analize() before GetScenesHierarchies().");
 
-            List<(string, string)> result = new();
-            foreach (var (Name, sceneObjects) in analysisResult.Scenes)
+            var result = new ConcurrentBag<(string, string)>();
+
+            Parallel.ForEach(analysisResult.Scenes, scene =>
             {
-                var builder = new UnityHierarchyBuilder(sceneObjects);
+                var builder = new UnityHierarchyBuilder(scene.Objects);
                 var hierarchy = builder.Build();
-                result.Add((Name.Value, hierarchy));
-            }
-            return result;
+                result.Add((scene.Name.Value, hierarchy));
+            });
+
+            return result.ToList();
         }
 
         public List<FileResult> GetUnusedScripts(AnalysisResult analysisResult)
@@ -85,25 +89,25 @@ namespace UnityGameDevelopmentTooling.Services
 
         public List<FileResult> GetUnusedSerializableScripts(AnalysisResult analysisResult, IDeserializer deserializer)
         {
-            List<FileResult> result = new();
+            var result = new ConcurrentBag<FileResult>();
 
             FileResult[] scriptFiles = FileUtils.FindFilesByExtension(_assetPath, "cs");
-            Dictionary<string, FileResult> guidPerFile = scriptFiles.ToDictionary(f => f.Guid, f => f);
+            var guidPerFile = scriptFiles.ToDictionary(f => f.Guid, f => f);
 
-            foreach (var monoBehaviours in analysisResult.MonoBehavioursInScenesByGuid.Values)
+            Parallel.ForEach(analysisResult.MonoBehavioursInScenesByGuid.Values, monoBehaviours =>
             {
                 var guid = monoBehaviours.GetFirstScript();
 
-                if (guidPerFile.TryGetValue(guid.Value, out var file) is false) continue;
+                if (!guidPerFile.TryGetValue(guid.Value, out var file))
+                    return;
 
-                List<string> serializableFields = FileUtils.GetSerializableFieldsFromMonoBehaviourScript(file.AbsolutePath);
+                var serializableFields = FileUtils.GetSerializableFieldsFromMonoBehaviourScript(file.AbsolutePath);
 
                 foreach (var monoBehaviour in monoBehaviours)
                 {
-                    var fields =
-                        YamlUtils.GetKeys(monoBehaviour.Yaml, deserializer)
-                        .RemoveUnityPrefixedFields()
-                        .ToList();
+                    var fields = YamlUtils.GetKeys(monoBehaviour.Yaml, deserializer)
+                                          .RemoveUnityPrefixedFields()
+                                          .ToList();
 
                     bool allPresent = serializableFields.All(f => fields.Contains(f));
 
@@ -115,9 +119,9 @@ namespace UnityGameDevelopmentTooling.Services
                         break;
                     }
                 }
-            }
+            });
 
-            return result;
+            return result.Distinct().ToList();
         }
     }
 }
