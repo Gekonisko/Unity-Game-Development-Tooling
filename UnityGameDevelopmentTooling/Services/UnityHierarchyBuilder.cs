@@ -3,7 +3,7 @@ using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
 using UnityGameDevelopmentTooling.SerializesModels;
 
-namespace UnityGameDevelopmentTooling
+namespace UnityGameDevelopmentTooling.Services
 {
     public class UnityHierarchyBuilder : IHierarchyBuilder
     {

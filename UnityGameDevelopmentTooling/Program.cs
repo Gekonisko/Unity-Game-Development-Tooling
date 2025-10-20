@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
+using UnityGameDevelopmentTooling.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -8,6 +9,14 @@ namespace UnityGameDevelopmentTooling
 {
     internal class Program
     {
+        private static readonly IDeserializer _camelCaseDeserializer = new DeserializerBuilder()
+        .WithNamingConvention(CamelCaseNamingConvention.Instance)
+        .IgnoreUnmatchedProperties()
+        .Build();
+
+        private static readonly IDeserializer _defaultDeserializer = new DeserializerBuilder()
+        .Build();
+
         private static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -26,19 +35,14 @@ namespace UnityGameDevelopmentTooling
             }
             Directory.CreateDirectory(outputPath);
 
-            IDeserializer _deserializer = new DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .IgnoreUnmatchedProperties()
-                .Build();
-
-            IYamlDeserializer yaml = new YamlDotNetDeserializer(_deserializer);
+            IYamlDeserializer yaml = new YamlDotNetDeserializer(_camelCaseDeserializer);
             ISceneParser sceneParser = new SceneParser();
             ISceneDeserializer deserializer = new SceneDeserializer(sceneParser, yaml);
 
             UnityProjectAnalizer analizer = new UnityProjectAnalizer(projectPath, deserializer);
-            analizer.Analize();
+            AnalysisResult analysisResult = analizer.Analize();
 
-            analizer.GetScenesHierarchies().ForEach(scene =>
+            analizer.GetScenesHierarchies(analysisResult).ForEach(scene =>
             {
                 var filePath = outputPath + "\\" + scene.Name + ".dump";
                 File.WriteAllText(filePath, scene.Hierarchy);
@@ -46,11 +50,11 @@ namespace UnityGameDevelopmentTooling
 
             StringBuilder unusedScriptsBuffer = new StringBuilder();
             unusedScriptsBuffer.AppendLine("Relative Path,GUID");
-            foreach (FileResult unusedScript in analizer.GetUnusedScripts())
+            foreach (FileResult unusedScript in analizer.GetUnusedScripts(analysisResult))
             {
                 unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
             }
-            foreach (FileResult unusedScript in analizer.GetUnusedSerializableScripts())
+            foreach (FileResult unusedScript in analizer.GetUnusedSerializableScripts(analysisResult, _defaultDeserializer))
             {
                 unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
             }

@@ -2,7 +2,7 @@
 using UnityGameDevelopmentTooling.Models;
 using UnityGameDevelopmentTooling.Utils;
 
-namespace UnityGameDevelopmentTooling
+namespace UnityGameDevelopmentTooling.Services
 {
     public class SceneDeserializer : ISceneDeserializer
     {
@@ -28,10 +28,10 @@ namespace UnityGameDevelopmentTooling
                     .SelectMany(a => a.GetTypes())
                     .FirstOrDefault(t => t.Name == className);
 
-                if (type != null)
+                if (type is not null)
                 {
                     var obj = (UnityObject)_deserializer.Deserialize(split.Body, type);
-                    obj.OnDeserializeYaml(split.Body, _deserializer.GetDeserializer());
+                    obj.Yaml = split.Body;
                     result.Add(header, obj);
                 }
             }

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
 
-namespace UnityGameDevelopmentTooling
+namespace UnityGameDevelopmentTooling.Services
 {
     public class SceneParser : ISceneParser
     {

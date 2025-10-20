@@ -7,5 +7,17 @@ namespace UnityGameDevelopmentTooling.SerializesModels
     {
         [YamlMember(Alias = "m_Script", ApplyNamingConventions = false)]
         public ScriptRef Script { get; set; }
+
+        public string GetScriptGuid()
+        {
+            if (Script is not null)
+            {
+                return Script.guid;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
     }
 }

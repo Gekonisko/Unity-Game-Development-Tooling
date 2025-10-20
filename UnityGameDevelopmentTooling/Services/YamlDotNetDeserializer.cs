@@ -1,7 +1,7 @@
 ﻿using UnityGameDevelopmentTooling.Interfaces;
 using YamlDotNet.Serialization;
 
-namespace UnityGameDevelopmentTooling
+namespace UnityGameDevelopmentTooling.Services
 {
     public class YamlDotNetDeserializer : IYamlDeserializer
     {
