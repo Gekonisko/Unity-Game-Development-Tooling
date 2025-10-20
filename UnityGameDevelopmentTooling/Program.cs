@@ -50,6 +50,10 @@ namespace UnityGameDevelopmentTooling
             {
                 unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
             }
+            foreach (FileResult unusedScript in analizer.GetUnusedSerializableScripts())
+            {
+                unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
+            }
             File.WriteAllText(outputPath + "\\UnusedScripts.csv", unusedScriptsBuffer.ToString());
         }
     }

@@ -17,5 +17,7 @@ namespace UnityGameDevelopmentTooling
 
         public Dictionary<string, object> DeserializeHeader(string yamlHeader)
             => _deserializer.Deserialize<Dictionary<string, object>>(yamlHeader);
+
+        public IDeserializer GetDeserializer() => _deserializer;
     }
 }

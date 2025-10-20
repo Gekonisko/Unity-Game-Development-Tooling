@@ -1,17 +1,18 @@
 ﻿using UnityGameDevelopmentTooling.Interfaces;
 using UnityGameDevelopmentTooling.Models;
+using UnityGameDevelopmentTooling.Utils;
 
 namespace UnityGameDevelopmentTooling
 {
     public class SceneDeserializer : ISceneDeserializer
     {
         private readonly ISceneParser _parser;
-        private readonly IYamlDeserializer _yaml;
+        private readonly IYamlDeserializer _deserializer;
 
-        public SceneDeserializer(ISceneParser parser, IYamlDeserializer yaml)
+        public SceneDeserializer(ISceneParser parser, IYamlDeserializer deserializer)
         {
             _parser = parser;
-            _yaml = yaml;
+            _deserializer = deserializer;
         }
 
         public Dictionary<UnityObjectInfo, UnityObject> DeserializeScene(string path)
@@ -19,8 +20,8 @@ namespace UnityGameDevelopmentTooling
             Dictionary<UnityObjectInfo, UnityObject> result = new();
             foreach (var (header, yamlText) in _parser.Parse(path))
             {
-                var split = SplitYaml(yamlText);
-                var headerDict = _yaml.DeserializeHeader(split.FirstLine);
+                var split = YamlUtils.SplitYaml(yamlText);
+                var headerDict = _deserializer.DeserializeHeader(split.FirstLine);
                 string className = headerDict.Keys.First();
 
                 var type = AppDomain.CurrentDomain.GetAssemblies()
@@ -29,20 +30,12 @@ namespace UnityGameDevelopmentTooling
 
                 if (type != null)
                 {
-                    var obj = _yaml.Deserialize(split.Body, type);
-                    result.Add(header, (UnityObject)obj);
+                    var obj = (UnityObject)_deserializer.Deserialize(split.Body, type);
+                    obj.OnDeserializeYaml(split.Body, _deserializer.GetDeserializer());
+                    result.Add(header, obj);
                 }
             }
-
             return result;
-        }
-
-        private static (string FirstLine, string Body) SplitYaml(string yaml)
-        {
-            var parts = yaml.Split(new[] { '\n' }, 2);
-            string first = parts[0];
-            string body = parts.Length > 1 ? "\n" + parts[1] : string.Empty;
-            return (first, body);
         }
     }
 }

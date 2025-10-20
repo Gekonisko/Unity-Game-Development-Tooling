@@ -1,9 +1,12 @@
-﻿using UnityGameDevelopmentTooling.Models;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using UnityGameDevelopmentTooling.Models;
 using UnityGameDevelopmentTooling.SerializesModels;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace UnityGameDevelopmentTooling
+namespace UnityGameDevelopmentTooling.Utils
 {
     public static class FileUtils
     {
@@ -76,6 +79,43 @@ namespace UnityGameDevelopmentTooling
             {
                 return string.Empty;
             }
+        }
+
+        public static List<string> GetSerializableFieldsFromMonoBehaviourScript(string scriptPath)
+        {
+            var serializableFields = new List<string>();
+
+            if (!File.Exists(scriptPath))
+                return serializableFields;
+
+            string sourceCode = File.ReadAllText(scriptPath);
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(sourceCode);
+            var root = tree.GetRoot();
+
+            var classNodes = root.DescendantNodes()
+                .OfType<ClassDeclarationSyntax>()
+                .Where(cls => cls.BaseList?.Types
+                    .Any(bt => bt.ToString().Contains("MonoBehaviour")) == true);
+
+            foreach (var classNode in classNodes)
+            {
+                var fieldDeclarations = classNode.Members.OfType<FieldDeclarationSyntax>();
+
+                foreach (var field in fieldDeclarations)
+                {
+                    bool isPublic = field.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword));
+                    bool hasSerializeField = field.AttributeLists
+                        .SelectMany(a => a.Attributes)
+                        .Any(a => a.Name.ToString().Contains("SerializeField"));
+
+                    if (isPublic || hasSerializeField)
+                    {
+                        foreach (var variable in field.Declaration.Variables)
+                            serializableFields.Add(variable.Identifier.Text);
+                    }
+                }
+            }
+            return serializableFields;
         }
     }
 }
