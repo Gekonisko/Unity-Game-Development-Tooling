@@ -26,14 +26,15 @@ namespace UnityGameDevelopmentTooling.Services
         public AnalysisResult Analize()
         {
             var scenes = new ConcurrentBag<SceneData>();
-            var monoBehavioursInScenesByGuid = new ConcurrentDictionary<ScriptGuid, List<MonoBehaviour>>();
+            var monoBehavioursInScenesByGuid = new ConcurrentDictionary<ScriptGuid, List<(SceneName SceneName, MonoBehaviour MonoBehaviour)>>();
 
             FileResult[] sceneFiles = FileUtils.FindFilesByExtension(_assetPath, "unity");
 
             Parallel.ForEach(sceneFiles, sceneFile =>
             {
                 var sceneObjects = _deserializer.DeserializeScene(sceneFile.AbsolutePath);
-                scenes.Add(new SceneData(new SceneName(sceneFile.Name), sceneObjects));
+                var sceneName = new SceneName(sceneFile.Name);
+                scenes.Add(new SceneData(sceneName, sceneObjects));
 
                 var monoBehaviours = sceneObjects
                     .Where(sb => sb.Key.ClassId == 114)
@@ -44,8 +45,8 @@ namespace UnityGameDevelopmentTooling.Services
                     var guid = new ScriptGuid(mb.Script.guid);
                     monoBehavioursInScenesByGuid.AddOrUpdate(
                         guid,
-                        _ => new List<MonoBehaviour> { mb },
-                        (_, existing) => { lock (existing) existing.Add(mb); return existing; });
+                        _ => new List<(SceneName, MonoBehaviour)> { (sceneName, mb) },
+                        (_, existing) => { lock (existing) existing.Add((sceneName, mb)); return existing; });
                 }
             });
 
@@ -105,7 +106,7 @@ namespace UnityGameDevelopmentTooling.Services
 
                 foreach (var monoBehaviour in monoBehaviours)
                 {
-                    var fields = YamlUtils.GetKeys(monoBehaviour.Yaml, deserializer)
+                    var fields = YamlUtils.GetKeys(monoBehaviour.MonoBehaviour.Yaml, deserializer)
                                           .RemoveUnityPrefixedFields()
                                           .ToList();
 
@@ -115,7 +116,7 @@ namespace UnityGameDevelopmentTooling.Services
                     {
                         result.Add(file);
                         var missing = serializableFields.Except(fields);
-                        Console.WriteLine($"[WARN] MonoBehaviour '{monoBehaviour.GetScriptGuid()}' in script '{file.Name}' is missing serialized fields: {string.Join(", ", missing)}");
+                        Console.WriteLine($"[WARN] MonoBehaviour '{monoBehaviour.MonoBehaviour.GetScriptGuid()}' in script '{file.Name}' inside Unity Scene `{monoBehaviour.SceneName}` is missing serialized fields: {string.Join(", ", missing)}");
                         break;
                     }
                 }
