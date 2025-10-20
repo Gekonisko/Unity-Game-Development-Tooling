@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityGameDevelopmentTooling.Models;
+﻿using UnityGameDevelopmentTooling.Models;
 using UnityGameDevelopmentTooling.SerializesModels;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -27,12 +22,14 @@ namespace UnityGameDevelopmentTooling
                 {
                     string relative = Path.GetRelativePath(path, file);
                     string guid = ReadGuidFromMeta(file);
+                    string name = Path.GetFileName(file);
 
                     var fileResult = new FileResult
                     {
                         AbsolutePath = file,
                         RelativePath = relative,
                         Guid = guid,
+                        Name = name
                     };
 
                     results.Add(fileResult);

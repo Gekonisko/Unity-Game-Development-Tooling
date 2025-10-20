@@ -2,7 +2,7 @@
   "profiles": {
     "UnityGameDevelopmentTooling": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Kuba\\Projects\\Unity\\hotdog-empire"
+      "commandLineArgs": "C:\\Users\\Kuba\\Projects\\Unity\\student-trainer\r\nC:\\Users\\Kuba\\Projects\\output"
     }
   }
 }

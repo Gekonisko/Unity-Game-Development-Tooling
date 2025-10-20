@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
-using Unity_Game_Development_tooling.Models;
 using UnityGameDevelopmentTooling.Interfaces;
+using UnityGameDevelopmentTooling.Models;
 
 namespace UnityGameDevelopmentTooling
 {
@@ -13,6 +13,7 @@ namespace UnityGameDevelopmentTooling
             StringBuilder buffer = new();
             UnityObjectInfo? header = null;
             bool isYaml = false;
+            string fileText = "";
 
             string? line;
             while ((line = reader.ReadLine()) != null)
@@ -29,6 +30,7 @@ namespace UnityGameDevelopmentTooling
                 else if (isYaml)
                 {
                     buffer.AppendLine(line);
+                    fileText += line + "\n";
                 }
             }
 

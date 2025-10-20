@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Unity_Game_Development_tooling.Models;
-using UnityGameDevelopmentTooling.Models;
+﻿using UnityGameDevelopmentTooling.Models;
 using YamlDotNet.Serialization;
 
 namespace UnityGameDevelopmentTooling.SerializesModels

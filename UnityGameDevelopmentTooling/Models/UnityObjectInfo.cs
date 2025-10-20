@@ -1,4 +1,4 @@
-﻿namespace Unity_Game_Development_tooling.Models
+﻿namespace UnityGameDevelopmentTooling.Models
 {
     public class UnityObjectInfo : IEquatable<UnityObjectInfo>
     {

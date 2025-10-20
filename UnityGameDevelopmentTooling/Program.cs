@@ -1,39 +1,56 @@
-﻿namespace UnityGameDevelopmentTooling
+﻿using System.Text;
+using UnityGameDevelopmentTooling.Interfaces;
+using UnityGameDevelopmentTooling.Models;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+
+namespace UnityGameDevelopmentTooling
 {
     internal class Program
     {
         private static void Main(string[] args)
         {
-            if (args.Length < 1)
+            if (args.Length != 2)
             {
-                Console.WriteLine("Usage: tool.exe <unity_project_path>");
+                Console.WriteLine("Usage: tool.exe <unity_project_path> <output_folder_path>");
                 return;
             }
 
             string projectPath = args[0];
+            string outputPath = args[1];
 
             if (!Directory.Exists(projectPath))
             {
                 Console.WriteLine($"Project path not found: {projectPath}");
                 return;
             }
+            Directory.CreateDirectory(outputPath);
 
-            string projectAssetsPath = projectPath + "\\Assets";
+            IDeserializer _deserializer = new DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .IgnoreUnmatchedProperties()
+                .Build();
 
-            List<string> sceneFiles = new List<string>();
-            foreach (var file in Directory.EnumerateFiles(projectAssetsPath, "*.unity", SearchOption.AllDirectories))
+            IYamlDeserializer yaml = new YamlDotNetDeserializer(_deserializer);
+            ISceneParser sceneParser = new SceneParser();
+            ISceneDeserializer deserializer = new SceneDeserializer(sceneParser, yaml);
+
+            UnityProjectAnalizer analizer = new UnityProjectAnalizer(projectPath, deserializer);
+            analizer.Analize();
+
+            analizer.GetScenesHierarchies().ForEach(scene =>
             {
-                sceneFiles.Add(file);
-            }
+                var filePath = outputPath + "\\" + scene.Name + ".dump";
+                File.WriteAllText(filePath, scene.Hierarchy);
+            });
 
-            Console.WriteLine("Found scenes:");
-            foreach (var scene in sceneFiles)
+            StringBuilder unusedScriptsBuffer = new StringBuilder();
+            unusedScriptsBuffer.AppendLine("Relative Path,GUID");
+            foreach (FileResult unusedScript in analizer.GetUnusedScripts())
             {
-                //List<string> names = ExtractGameObjectNames(scene);
-                //Console.WriteLine($"scene: {scene}");
-                //names.ForEach(Console.WriteLine);
-                //var serializer = new UnitySceneSerializer(scene);
+                unusedScriptsBuffer.AppendLine(unusedScript.RelativePath + "," + unusedScript.Guid);
             }
+            File.WriteAllText(outputPath + "\\UnusedScripts.csv", unusedScriptsBuffer.ToString());
         }
     }
 }
